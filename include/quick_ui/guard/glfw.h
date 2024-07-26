@@ -27,7 +27,7 @@ struct glfw
 	const auto& window() const { return _window; }
 
 	::ngs::external::glfw::guards::opengl_guard _glfw{ 3,0 };
-	::ngs::external::glfw::window& _window;
+	::ngs::external::glfw::window _window;
 };
 
 NGS_LIB_MODULE_END

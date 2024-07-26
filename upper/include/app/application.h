@@ -28,8 +28,8 @@ struct application
 					{
 						if (::ImGui::BeginTabItem("udp"))
 						{
-							_udp.render_control();
-							_udp.render_config();
+							_udp.render_reader();
+							_udp.render_port();
 							_udp.render_message();
 							::ImGui::EndTabItem();
 						}
@@ -42,7 +42,7 @@ struct application
 				::ImGui::SetNextWindowSize({ 916,639 }, ImGuiCond_FirstUseEver);
 				if (::ImGui::Begin("channel data", nullptr, window_flag))
 				{
-
+					_udp.render_plot();
 					::ImGui::End();
 				}
 			}

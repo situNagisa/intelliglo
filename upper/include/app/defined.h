@@ -13,6 +13,8 @@
 #include "NGS/external/stl/range.h"
 #include "NGS/external/glfw.h"
 #include "NGS/external/imgui/component/component.h"
+#include "NGS/experimental/protoc/parser.h"
+#include "NGS/mpl/mstruct.h"
 
 #define NGS_LIB_GLOBAL_BEGIN
 #define NGS_LIB_GLOBAL_END

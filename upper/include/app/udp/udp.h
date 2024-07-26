@@ -1,100 +1,91 @@
 #pragma once
 
+#include "./type.h"
+#include "./plot.h"
+#include "./reader.h"
+#include "./port.h"
+#include "./buffer.h"
 #include "./defined.h"
 
 NGS_LIB_MODULE_BEGIN
 
 struct instance
 {
-	void update()
+	using point_type = point_t;
+
+	instance()
 	{
-		_context.poll();
+		_buffer.resize(8192);
+		_plot.set_independent(::std::views::iota(0, 8192));
 	}
 
-	auto open(::std::string_view host, ::std::string_view service)
+	void render_port()
 	{
-		::boost::system::error_code error_code;
-		_io.open(::boost::asio::ip::udp::v4(), error_code);
-		if (error_code)
-		{
-			NGS_LOGL(error, "open serial port error: ", error_code.message());
-			return false;
-		}
-		::boost::asio::ip::udp::resolver resolver(_context);
-		_io.bind(*resolver.resolve({ ::boost::asio::ip::udp::v4(), host.data(), service.data() }));
-
-		auto endpoint = _io.local_endpoint();
-		NGS_LOGL(info, ::std::format("udp socket open {}: {}", endpoint.address().to_string(), endpoint.port()));
-
-		if(!_io.is_open())
-		{
-			return false;
-		}
-
-		::boost::asio::co_spawn(_context, _receive(), ::boost::asio::detached);
-
-		return true;
+		_port.render();
 	}
-
-	auto close()
-	{
-		::boost::system::error_code error_code;
-		_io.close(error_code);
-		if (error_code)
-		{
-			NGS_LOGL(error, "open serial port error: ", error_code.message());
-			return false;
-		}
-
-		_context.reset();
-
-		return true;
-	}
-
-	::boost::asio::awaitable<void> _receive()
-	{
-		::std::array<::std::byte, 256> buffer{};
-		while (true)
-		{
-			auto n = co_await _io.async_receive_from(::boost::asio::buffer(_buffer), _endpoint,::boost::asio::use_awaitable);
-		}
-	}
-
-	void render_config()
+	void update_port()
 	{
 		
 	}
 
-	void render_control()
+	void render_reader()
 	{
-		if (_io.is_open())
+		_reader.render(_reader.is_open());
+	}
+
+	void update_reader()
+	{
+		if(_reader.is_change().open_or_close)
 		{
-			if (::ImGui::Button("close", { 100, 0 }))
+			if (!_reader.is_open())
 			{
-				close();
+				_reader.open(_port.info().host.data(), _port.info().service.data());
+			}
+			else
+			{
+				_reader.close();
 			}
 		}
-		else
+		_reader.poll();
+		if(_reader.buffer().size() > 16)
 		{
-			if (::ImGui::Button("open", { 100, 0 }))
-			{
-				open("127.0.0.1", "6666");
-			}
+			auto unit_buffer = ::std::as_writable_bytes(_buffer.packet_buffer());
+			::std::ranges::copy(_reader.buffer() | ::std::views::take(16), unit_buffer.begin());
+			_reader.pop_buffer(16);
+			_buffer.transfer();
 		}
 	}
 
 	void render_message()
 	{
-		auto alpha = _io.is_open() ? 1.0f : 0.5f;
+		auto alpha = _reader.is_open() ? 1.0f : 0.5f;
 		::ImGui::PushStyleVar(::ImGuiStyleVar_Alpha, ::ImGui::GetStyle().Alpha * alpha);
 
 		::ImGui::PopStyleVar();
 	}
 
-	::boost::asio::io_context _context{};
-	::boost::asio::ip::udp::socket _io{ _context };
-	::boost::asio::ip::udp::endpoint _endpoint;
-	::std::array<::std::byte, 0x100> _buffer{};
+	void render_plot()
+	{
+		_plot.render("channel 0", { 900,200 }, _buffer.channel<0>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 1", { 900,200 }, _buffer.channel<1>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 2", { 900,200 }, _buffer.channel<2>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 3", { 900,200 }, _buffer.channel<3>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 4", { 900,200 }, _buffer.channel<4>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 5", { 900,200 }, _buffer.channel<5>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 6", { 900,200 }, _buffer.channel<6>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_plot.render("channel 7", { 900,200 }, _buffer.channel<7>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+	}
+
+	void update()
+	{
+		update_reader();
+		update_port();
+	}
+
+	plot _plot{};
+	reader _reader{};
+	port _port{};
+	buffer _buffer{};
 };
 
 NGS_LIB_MODULE_END

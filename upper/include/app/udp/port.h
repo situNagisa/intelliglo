@@ -21,7 +21,7 @@ public:
 
 	struct
 	{
-		::std::array<char, 0x20> host = { "127.0.0.1" };
+		::std::array<char, 0x20> host = { "0.0.0.0" };
 		::std::array<char, 0x20> service = { "6665" };
 	}_info{};
 	struct

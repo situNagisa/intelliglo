@@ -12,28 +12,33 @@ struct buffer
 	using unit_type = unit_t;
 	using point_type = point_t;
 
-	void transfer(::std::size_t size)
+	void transfer(::std::size_t size, ::std::size_t active_size)
 	{
 		auto units = _buffer | ::std::views::take(size);
-		_range_limit<0>(units);
-		_range_limit<1>(units);
-		_range_limit<3>(units);
-		_range_limit<4>(units);
-		_range_limit<5>(units);
-		_range_limit<6>(units);
-		_range_limit<7>(units);
+		_range_limit<0>(units, active_size);
+		_range_limit<1>(units, active_size);
+		_range_limit<2>(units, active_size);
+		_range_limit<3>(units, active_size);
+		_range_limit<4>(units, active_size);
+		_range_limit<5>(units, active_size);
+		_range_limit<6>(units, active_size);
+		_range_limit<7>(units, active_size);
 		::std::ranges::shift_left(_buffer, static_cast<::std::ptrdiff_t>(size));
 	}
 
 	template<::std::size_t Index>
-	void _range_limit(::std::ranges::input_range auto&& range)
+	void _range_limit(::std::ranges::input_range auto&& range, ::std::size_t active_size)
 	{
-		NGS_LIB_MODULE_NAME::range_limit(range | ::std::views::elements<Index>, channel<Index>(), _channels.size());
+		NGS_LIB_MODULE_NAME::range_limit(range | ::std::views::elements<Index>, channel<Index>(), active_size);
 	}
 
 	void transfer()
 	{
-		transfer(_size);
+		transfer(_size, _channels.size());
+	}
+	void transfer(::std::size_t size)
+	{
+		transfer(size, _channels.size());
 	}
 
 	constexpr void resize(::std::size_t size)

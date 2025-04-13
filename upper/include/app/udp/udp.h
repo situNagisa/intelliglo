@@ -1,10 +1,7 @@
 #pragma once
 
 #include "./type.h"
-#include "./plot.h"
-#include "./reader.h"
-#include "./port.h"
-#include "./buffer.h"
+#include "./hand.h"
 #include "./defined.h"
 
 NGS_LIB_MODULE_BEGIN
@@ -15,77 +12,38 @@ struct instance
 
 	instance()
 	{
-		_buffer.resize(8192);
-		_plot.set_independent(::std::views::iota(0, 8192));
+
+	}
+	void render_left_config()
+	{
+		_left.render_reader();
+		_left.render_port();
+		_left.render_saver();
+	}
+	void render_right_config()
+	{
+		_right.render_reader();
+		_right.render_port();
+		_right.render_saver();
 	}
 
-	void render_port()
+	void render_left_plot()
 	{
-		_port.render();
+		_left.render_plot();
 	}
-	void update_port()
+	void render_right_plot()
 	{
-		
-	}
-
-	void render_reader()
-	{
-		_reader.render(_reader.is_open());
-	}
-
-	void update_reader()
-	{
-		if(_reader.is_change().open_or_close)
-		{
-			if (!_reader.is_open())
-			{
-				_reader.open(_port.info().host.data(), _port.info().service.data());
-			}
-			else
-			{
-				_reader.close();
-			}
-		}
-		_reader.poll();
-		if(_reader.buffer().size() > 16)
-		{
-			auto unit_buffer = ::std::as_writable_bytes(_buffer.packet_buffer());
-			::std::ranges::copy(_reader.buffer() | ::std::views::take(16), unit_buffer.begin());
-			_reader.pop_buffer(16);
-			_buffer.transfer();
-		}
-	}
-
-	void render_message()
-	{
-		auto alpha = _reader.is_open() ? 1.0f : 0.5f;
-		::ImGui::PushStyleVar(::ImGuiStyleVar_Alpha, ::ImGui::GetStyle().Alpha * alpha);
-
-		::ImGui::PopStyleVar();
-	}
-
-	void render_plot()
-	{
-		_plot.render("channel 0", { 900,200 }, _buffer.channel<0>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 1", { 900,200 }, _buffer.channel<1>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 2", { 900,200 }, _buffer.channel<2>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 3", { 900,200 }, _buffer.channel<3>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 4", { 900,200 }, _buffer.channel<4>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 5", { 900,200 }, _buffer.channel<5>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 6", { 900,200 }, _buffer.channel<6>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
-		_plot.render("channel 7", { 900,200 }, _buffer.channel<7>(), ::ImPlotFlags_::ImPlotFlags_NoInputs);
+		_right.render_plot();
 	}
 
 	void update()
 	{
-		update_reader();
-		update_port();
+		_left.update();
+		_right.update();
 	}
 
-	plot _plot{};
-	reader _reader{};
-	port _port{};
-	buffer _buffer{};
+	hand _left{0};
+	hand _right{1};
 };
 
 NGS_LIB_MODULE_END

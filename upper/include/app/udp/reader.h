@@ -95,7 +95,7 @@ public:
 			NGS_LOGL(error, "open serial port error: ", error_code.message());
 			return false;
 		}
-
+		NGS_LOGL(info, "close udp");
 		_context.reset();
 
 		return true;
@@ -113,7 +113,12 @@ public:
 			{
 				_buffer.push_back(i);
 			}
-			NGS_LOGL(debug, ::std::format("receive {} bytes", n));
+			NGS_LOGL(debug, ::std::ranges::fold_left_first(
+				buffer 
+				| ::std::views::take(n) 
+				| ::std::views::transform([](auto&& b) { return ::std::format("{:#02x}, ", ::std::to_integer<::std::uint8_t>(b)); }),
+				::std::plus<>()
+				).value());
 		}
 	}
 

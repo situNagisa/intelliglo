@@ -11,6 +11,10 @@ struct plot
 	{
 		::ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_None, ImPlotAxisFlags_AutoFit);
 		auto start = _independent.empty() ? 0.0 : static_cast<double>(_independent.front());
+		::ImPlot::SetupAxisLimits(ImAxis_Y1,
+			0,
+			4095,
+			ImGuiCond_Always);
 		::ImPlot::SetupAxisLimits(ImAxis_X1,
 			start,
 			start + _independent.size(),
